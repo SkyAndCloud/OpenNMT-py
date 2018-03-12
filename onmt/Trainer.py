@@ -79,13 +79,10 @@ class Statistics(object):
 
     def log_tensorboard(self, prefix, writer, lr, epoch):
         t = self.elapsed_time()
-        values = {
-            "ppl": self.ppl(),
-            "accuracy": self.accuracy(),
-            "tgtper": self.n_words / t,
-            "lr": lr,
-        }
-        writer.add_scalars(prefix, values, epoch)
+        writer.add_scalar(prefix + "/ppl", self.ppl(), epoch)
+        writer.add_scalar(prefix + "/accuracy", self.accuracy(), epoch)
+        writer.add_scalar(prefix + "/tgtper",  self.n_words / t, epoch)
+        writer.add_scalar(prefix + "/lr", lr, epoch)
 
 
 class Trainer(object):
@@ -163,8 +160,9 @@ class Trainer(object):
             true_batchs.append(batch)
             accum += 1
             if self.norm_method == "tokens":
-                normalization += batch.tgt[1:].data.view(-1) \
+                num_tokens = batch.tgt[1:].data.view(-1) \
                     .ne(self.train_loss.padding_idx).sum()
+                normalization += num_tokens
             else:
                 normalization += batch.batch_size
 
