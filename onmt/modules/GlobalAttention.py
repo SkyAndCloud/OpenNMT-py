@@ -45,7 +45,7 @@ class GlobalAttention(nn.Module):
 
     * Luong Attention (dot, general):
        * dot: :math:`score(H_j,q) = H_j^T q`
-       * general(local attention): :math:`score(H_j, q) = H_j^T W_a q`
+       * general: :math:`score(H_j, q) = H_j^T W_a q`
 
 
     * Bahdanau Attention (mlp):
