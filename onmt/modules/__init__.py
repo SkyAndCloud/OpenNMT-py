@@ -13,6 +13,7 @@ from onmt.modules.MultiHeadedAttn import MultiHeadedAttention
 from onmt.modules.StackedRNN import StackedLSTM, StackedGRU
 from onmt.modules.Embeddings import Embeddings, PositionalEncoding
 from onmt.modules.WeightNorm import WeightNormConv2d
+from onmt.modules.Groundhog import GroundhogGRU, GroundhogAttention
 
 from onmt.Models import EncoderBase, MeanEncoder, StdRNNDecoder, \
     RNNDecoderBase, InputFeedRNNDecoder, RNNEncoder, NMTModel
@@ -32,7 +33,7 @@ __all__ = [EncoderBase, MeanEncoder, RNNDecoderBase, InputFeedRNNDecoder,
            LayerNorm,
            TransformerEncoder, TransformerDecoder, Embeddings, Elementwise,
            MatrixTree, WeightNormConv2d, ConvMultiStepAttention,
-           CNNEncoder, CNNDecoder, StackedLSTM, StackedGRU,
+           CNNEncoder, CNNDecoder, StackedLSTM, StackedGRU, GroundhogGRU, GroundhogAttention,
            context_gate_factory, CopyGeneratorLossCompute, AudioEncoder]
 
 if can_use_sru:
