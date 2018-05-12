@@ -29,8 +29,10 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     """
     if for_encoder:
         embedding_dim = opt.src_word_vec_size
+        embedding_dropout = opt.encoder_embeddings_dropout
     else:
         embedding_dim = opt.tgt_word_vec_size
+        embedding_dropout = opt.decoder_embeddings_dropout
 
     word_padding_idx = word_dict.stoi[onmt.io.PAD_WORD]
     num_word_embeddings = len(word_dict)
@@ -50,7 +52,8 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
                       feat_padding_idx=feats_padding_idx,
                       word_vocab_size=num_word_embeddings,
                       feat_vocab_sizes=num_feat_embeddings,
-                      sparse=opt.optim == "sparseadam")
+                      sparse=opt.optim == "sparseadam",
+                      embedding_dropout=embedding_dropout)
 
 
 def make_encoder(opt, embeddings):
