@@ -94,7 +94,8 @@ class Embeddings(nn.Module):
                  feat_padding_idx=[],
                  feat_vocab_sizes=[],
                  dropout=0,
-                 sparse=False):
+                 sparse=False,
+                 embedding_dropout=0):
 
         self.word_padding_idx = word_padding_idx
 
@@ -138,6 +139,8 @@ class Embeddings(nn.Module):
         super(Embeddings, self).__init__()
         self.make_embedding = nn.Sequential()
         self.make_embedding.add_module('emb_luts', emb_luts)
+        if embedding_dropout:
+            self.make_embedding.add_module('emb_dropout', nn.Dropout(p=embedding_dropout))
 
         if feat_merge == 'mlp' and len(feat_vocab_sizes) > 0:
             in_dim = sum(emb_dims)

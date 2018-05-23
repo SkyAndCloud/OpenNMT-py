@@ -9,7 +9,7 @@ from torch.nn.utils.rnn import pad_packed_sequence as unpack
 
 import onmt
 from onmt.Utils import aeq
-
+import logging
 
 def rnn_factory(rnn_type, **kwargs):
     # Use pytorch version when available.
@@ -108,7 +108,7 @@ class RNNEncoder(EncoderBase):
     """
     def __init__(self, rnn_type, bidirectional, num_layers,
                  hidden_size, dropout=0.0, embeddings=None,
-                 use_bridge=False):
+                 bridge_type=None):
         super(RNNEncoder, self).__init__()
         assert embeddings is not None
 
@@ -126,8 +126,8 @@ class RNNEncoder(EncoderBase):
                         bidirectional=bidirectional)
 
         # Initialize the bridge layer
-        self.use_bridge = use_bridge
-        if self.use_bridge:
+        self.bridge_type = bridge_type
+        if self.bridge_type:
             self._initialize_bridge(rnn_type,
                                     hidden_size,
                                     num_layers)
@@ -179,7 +179,11 @@ class RNNEncoder(EncoderBase):
             """
             size = states.size()
             result = linear(states.view(-1, self.total_hidden_dim))
-            return F.relu(result).view(size)
+            # It's tanh in RNNSearch but not relu
+            if self.bridge_type == "relu":
+                return F.relu(result).view(size)
+            else:
+                return F.tanh(result).view(size)
 
         if isinstance(hidden, tuple):  # LSTM
             outs = tuple([bottle_hidden(layer, hidden[ix])
@@ -541,7 +545,6 @@ class InputFeedRNNDecoder(RNNDecoderBase):
         Using input feed by concatenating input with attention vectors.
         """
         return self.embeddings.embedding_size + self.hidden_size
-
 
 class NMTModel(nn.Module):
     """

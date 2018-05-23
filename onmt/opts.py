@@ -28,6 +28,12 @@ def model_opts(parser):
                        help="""Use a sin to mark relative words positions.
                        Necessary for non-RNN style models.
                        """)
+    group.add_argument('-encoder_embeddings_dropout', type=float, default=0,
+                       help="""Add a dropout layer after encoder word embedding""")
+    group.add_argument('-decoder_embeddings_dropout', type=float, default=0,
+                       help="""Add a dropout layer after decoder word embedding""")
+    group.add_argument('-layer_norm', action='store_true',
+                       help="""Use layer normalization between every two layers in encoder and decoder""")
 
     group = parser.add_argument_group('Model-Embedding Features')
     group.add_argument('-feat_merge', type=str, default='concat',
@@ -227,6 +233,8 @@ def train_opts(parser):
     group.add_argument('-seed', type=int, default=-1,
                        help="""Random seed used for the experiments
                        reproducibility.""")
+    group.add_argument('-reshuffle_each_epoch', action='store_true',
+                       help="""reshuffle dataset between epochs""")
 
     # Init options
     group = parser.add_argument_group('Initialization')

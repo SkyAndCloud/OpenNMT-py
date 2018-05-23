@@ -13,7 +13,7 @@ from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
                         StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder, AudioEncoder
+                         CNNEncoder, CNNDecoder, AudioEncoder, RNNSearchDecoder
 from onmt.Utils import use_gpu
 from torch.nn.init import xavier_uniform
 
@@ -29,8 +29,10 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
     """
     if for_encoder:
         embedding_dim = opt.src_word_vec_size
+        embedding_dropout = opt.encoder_embeddings_dropout
     else:
         embedding_dim = opt.tgt_word_vec_size
+        embedding_dropout = opt.decoder_embeddings_dropout
 
     word_padding_idx = word_dict.stoi[onmt.io.PAD_WORD]
     num_word_embeddings = len(word_dict)
@@ -50,7 +52,8 @@ def make_embeddings(opt, word_dict, feature_dicts, for_encoder=True):
                       feat_padding_idx=feats_padding_idx,
                       word_vocab_size=num_word_embeddings,
                       feat_vocab_sizes=num_feat_embeddings,
-                      sparse=opt.optim == "sparseadam")
+                      sparse=opt.optim == "sparseadam",
+                      embedding_dropout=embedding_dropout)
 
 
 def make_encoder(opt, embeddings):
@@ -69,6 +72,9 @@ def make_encoder(opt, embeddings):
                           opt.dropout, embeddings)
     elif opt.encoder_type == "mean":
         return MeanEncoder(opt.enc_layers, embeddings)
+    elif opt.encoder_type == "rnnsearch":
+        return RNNEncoder("GRU", True, 1, opt.rnn_size, opt.dropout,
+                          embeddings, opt.bridge)
     else:
         # "rnn" or "brnn"
         return RNNEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,
@@ -92,6 +98,9 @@ def make_decoder(opt, embeddings):
                           opt.global_attention, opt.copy_attn,
                           opt.cnn_kernel_width, opt.dropout,
                           embeddings)
+    elif opt.decoder_type == "rnnsearch":
+        return RNNSearchDecoder(embeddings.embedding_size or opt.word_vec_size,
+                                opt.rnn_size, opt.dropout, embeddings)
     elif opt.input_feed:
         return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
                                    opt.dec_layers, opt.rnn_size,
