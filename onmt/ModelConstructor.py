@@ -13,7 +13,7 @@ from onmt.Models import NMTModel, MeanEncoder, RNNEncoder, \
                         StdRNNDecoder, InputFeedRNNDecoder
 from onmt.modules import Embeddings, ImageEncoder, CopyGenerator, \
                          TransformerEncoder, TransformerDecoder, \
-                         CNNEncoder, CNNDecoder, AudioEncoder
+                         CNNEncoder, CNNDecoder, AudioEncoder, RNNSearchDecoder
 from onmt.Utils import use_gpu
 from torch.nn.init import xavier_uniform
 
@@ -72,6 +72,9 @@ def make_encoder(opt, embeddings):
                           opt.dropout, embeddings)
     elif opt.encoder_type == "mean":
         return MeanEncoder(opt.enc_layers, embeddings)
+    elif opt.encoder_type == "rnnsearch":
+        return RNNEncoder("GRU", True, 1, opt.rnn_size, opt.dropout,
+                          embeddings, opt.bridge)
     else:
         # "rnn" or "brnn"
         return RNNEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,
@@ -95,6 +98,9 @@ def make_decoder(opt, embeddings):
                           opt.global_attention, opt.copy_attn,
                           opt.cnn_kernel_width, opt.dropout,
                           embeddings)
+    elif opt.decoder_type == "rnnsearch":
+        return RNNSearchDecoder(embeddings.embedding_size or opt.word_vec_size,
+                                opt.rnn_size, opt.dropout, embeddings)
     elif opt.input_feed:
         return InputFeedRNNDecoder(opt.rnn_type, opt.brnn,
                                    opt.dec_layers, opt.rnn_size,
