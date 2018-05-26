@@ -2,8 +2,9 @@ import torch
 import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
+import ipdb
 
-from onmt.Models import RNNDecoderState
+from onmt.Models import DecoderState
 
 class RNNSearchGRU(nn.Module):
     def __init__(self, embed_dim, hidden_dim):
@@ -50,10 +51,8 @@ class RNNSearchAttention(nn.Module):
         prev_s : B, H
         '''
         seq_len = enc_h.size(1)
-
         enc_h_in = self.enc_h_in(enc_h) # S, B, H
-        prev_s = self.prev_s_in(prev_s).unsqueeze(1)  # B, 1, H
-
+        prev_s = self.prev_s_in(prev_s).unsqueeze(0)  # 1, B, H
         h = F.tanh(enc_h_in + prev_s.expand_as(enc_h_in)) # S, B, H
         h = self.linear(h)  # S, B, 1
 
@@ -75,7 +74,7 @@ class RNNSearchDecoder(nn.Module):
 
     def forward(self, tgt, memory_bank, state, memory_lengths=None):
         # CHECKS
-        assert isinstance(state, RNNDecoderState)
+        assert isinstance(state, RNNSearchDecoderState)
 
         target_len, batch_size = tgt.size(0), tgt.size(1)
         dec_h = Variable(torch.zeros(target_len, batch_size, self.hidden_dim))
@@ -90,7 +89,7 @@ class RNNSearchDecoder(nn.Module):
             attns["std"] += [alpha.squeeze(2)]
             hidden = self.decoder_cell(target[i], hidden, ctx)
             maxout_t = self.maxout_c_in(ctx) + self.maxout_hidden_in(hidden) + self.maxout_prev_y_in(target[i])
-            maxout_t = maxout_t.view(maxout_t.size(0), maxout_t.size(1), maxout_t.size(2)/2, 2)
+            maxout_t = maxout_t.view(maxout_t.size(0), maxout_t.size(1) // 2, 2)
             maxout_t = maxout_t.max(-1)[0] # B, H
             dec_h[i] = maxout_t
         state.update_state(hidden)
@@ -98,13 +97,9 @@ class RNNSearchDecoder(nn.Module):
         return dec_h, state, attns
 
     def init_decoder_state(self, src, memory_bank, encoder_final):
-        def _fix_enc_hidden(h):
-            # The encoder hidden is  (layers*directions) x batch x dim.
-            # We need to convert it to layers x batch x (directions*dim).
-            return torch.cat([h[0:h.size(0):2], h[1:h.size(0):2]], 2)
-
-        return RNNSearchDecoderState(self.hidden_size,
-                                   _fix_enc_hidden(encoder_final))
+        # 2, B, H -> B, H
+        left_encoder_final = torch.squeeze(encoder_final[0], 0)
+        return RNNSearchDecoderState(self.hidden_dim, left_encoder_final)
 
 class RNNSearchDecoderState(DecoderState):
     def __init__(self, hidden_size, rnnstate):

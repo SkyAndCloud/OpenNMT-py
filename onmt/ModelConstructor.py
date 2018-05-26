@@ -74,7 +74,7 @@ def make_encoder(opt, embeddings):
         return MeanEncoder(opt.enc_layers, embeddings)
     elif opt.encoder_type == "rnnsearch":
         return RNNEncoder("GRU", True, 1, opt.rnn_size, opt.dropout,
-                          embeddings, opt.bridge)
+                          embeddings, opt.bridge, half_hidden_size=False)
     else:
         # "rnn" or "brnn"
         return RNNEncoder(opt.rnn_type, opt.brnn, opt.enc_layers,

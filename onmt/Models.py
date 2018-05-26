@@ -2,6 +2,7 @@ from __future__ import division
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import ipdb
 
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence as pack
@@ -108,13 +109,14 @@ class RNNEncoder(EncoderBase):
     """
     def __init__(self, rnn_type, bidirectional, num_layers,
                  hidden_size, dropout=0.0, embeddings=None,
-                 bridge_type=None):
+                 bridge_type=None, half_hidden_size=True):
         super(RNNEncoder, self).__init__()
         assert embeddings is not None
 
         num_directions = 2 if bidirectional else 1
         assert hidden_size % num_directions == 0
-        hidden_size = hidden_size // num_directions
+        if half_hidden_size:
+            hidden_size = hidden_size // num_directions
         self.embeddings = embeddings
 
         self.rnn, self.no_pack_padded_seq = \
@@ -150,7 +152,7 @@ class RNNEncoder(EncoderBase):
         if lengths is not None and not self.no_pack_padded_seq:
             memory_bank = unpack(memory_bank)[0]
 
-        if self.use_bridge:
+        if self.bridge_type:
             encoder_final = self._bridge(encoder_final)
         return encoder_final, memory_bank
 

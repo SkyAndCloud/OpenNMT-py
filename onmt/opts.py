@@ -57,15 +57,15 @@ def model_opts(parser):
                        Options are [text|img|audio].""")
 
     group.add_argument('-encoder_type', type=str, default='rnn',
-                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn'],
+                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn', 'rnnsearch'],
                        help="""Type of encoder layer to use. Non-RNN layers
                        are experimental. Options are
-                       [rnn|brnn|mean|transformer|cnn].""")
+                       [rnn|brnn|mean|transformer|cnn|rnnsearch].""")
     group.add_argument('-decoder_type', type=str, default='rnn',
-                       choices=['rnn', 'transformer', 'cnn'],
+                       choices=['rnn', 'transformer', 'cnn', 'rnnsearch'],
                        help="""Type of decoder layer to use. Non-RNN layers
                        are experimental. Options are
-                       [rnn|transformer|cnn].""")
+                       [rnn|transformer|cnn|rnnsearch].""")
 
     group.add_argument('-layers', type=int, default=-1,
                        help='Number of layers in enc/dec.')
@@ -83,7 +83,8 @@ def model_opts(parser):
                        help="""Feed the context vector at each time step as
                        additional input (via concatenation with the word
                        embeddings) to the decoder.""")
-    group.add_argument('-bridge', action="store_true",
+    group.add_argument('-bridge', type=str, default='',
+                       choices=['', 'relu', 'tanh'],
                        help="""Have an additional layer between the last encoder
                        state and the first decoder state""")
     group.add_argument('-rnn_type', type=str, default='LSTM',

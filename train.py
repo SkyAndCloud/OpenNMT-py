@@ -20,7 +20,7 @@ import onmt.ModelConstructor
 import onmt.modules
 from onmt.Utils import use_gpu
 import onmt.opts
-
+#  import tools.crash_on_ipy
 
 parser = argparse.ArgumentParser(
     description='train.py',
