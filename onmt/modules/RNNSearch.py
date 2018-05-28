@@ -56,7 +56,7 @@ class RNNSearchAttention(nn.Module):
         h = F.tanh(enc_h_in + prev_s.expand_as(enc_h_in)) # S, B, H
         h = self.linear(h)  # S, B, 1
 
-        alpha = F.softmax(h)
+        alpha = F.softmax(h, 0)
         ctx = torch.bmm(alpha.transpose(0,1).transpose(2,1), enc_h.transpose(0,1)).squeeze(1) # B, 2H
 
         return ctx, alpha
@@ -82,7 +82,7 @@ class RNNSearchDecoder(nn.Module):
             dec_h = dec_h.cuda()
 
         target = self.embed(tgt) # S, B, E
-        hidden = state.hidden[0]
+        hidden = state.hidden[0].squeeze(0)
         attns = {"std": []}
         for i in range(target_len):
             ctx, alpha = self.attention(memory_bank, hidden)
@@ -92,20 +92,19 @@ class RNNSearchDecoder(nn.Module):
             maxout_t = maxout_t.view(maxout_t.size(0), maxout_t.size(1) // 2, 2)
             maxout_t = maxout_t.max(-1)[0] # B, H
             dec_h[i] = maxout_t
-        state.update_state(hidden)
-        attns["std"] = torch.stack(attns["std"]).transpose(1,2) # tgt_len, batch, src_len
+        state.update_state(hidden.unsqueeze(0))
+        attns["std"] = torch.stack(attns["std"]).transpose(1,2).contiguous() # tgt_len, batch, src_len
         return dec_h, state, attns
 
     def init_decoder_state(self, src, memory_bank, encoder_final):
-        # 2, B, H -> B, H
-        left_encoder_final = torch.squeeze(encoder_final[0], 0)
-        return RNNSearchDecoderState(self.hidden_dim, left_encoder_final)
+        # 2, B, H -> 1, B, H
+        left_encoder_final = torch.unsqueeze(encoder_final[0], 0)
+        return RNNSearchDecoderState(left_encoder_final)
 
 class RNNSearchDecoderState(DecoderState):
-    def __init__(self, hidden_size, rnnstate):
+    def __init__(self, rnnstate):
         """
         Args:
-            hidden_size (int): the size of hidden layer of the decoder.
             rnnstate: final hidden state from the encoder.
                 transformed to shape: layers x batch x (directions*dim).
         """
@@ -128,4 +127,4 @@ class RNNSearchDecoderState(DecoderState):
         """ Repeat beam_size times along batch dimension. """
         vars = [Variable(e.data.repeat(1, beam_size, 1), volatile=True)
                 for e in self._all]
-        self.hidden = tuple(vars[:-1])
+        self.hidden = tuple(vars[0])
