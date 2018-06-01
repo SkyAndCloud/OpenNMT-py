@@ -56,7 +56,7 @@ class RNNSearchAttention(nn.Module):
         h = F.tanh(enc_h_in + prev_s.expand_as(enc_h_in)) # S, B, H
         h = self.linear(h)  # S, B, 1
 
-        alpha = F.softmax(h, 0)
+        alpha = F.softmax(h, -1)
         ctx = torch.bmm(alpha.transpose(0,1).transpose(2,1), enc_h.transpose(0,1)).squeeze(1) # B, 2H
 
         return ctx, alpha
