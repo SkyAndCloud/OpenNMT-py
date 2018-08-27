@@ -18,6 +18,7 @@ import torch.nn as nn
 import onmt
 import onmt.io
 import onmt.modules
+from onmt.translate import Translator
 
 
 class Statistics(object):
@@ -112,7 +113,7 @@ class Trainer(object):
 
     def __init__(self, model, train_loss, valid_loss, optim,
                  trunc_size=0, shard_size=32, data_type='text',
-                 norm_method="sents", grad_accum_count=1):
+                 norm_method="sents", grad_accum_count=1, translate_sample_every=0):
         # Basic attributes.
         self.model = model
         self.train_loss = train_loss
@@ -124,13 +125,17 @@ class Trainer(object):
         self.norm_method = norm_method
         self.grad_accum_count = grad_accum_count
         self.progress_step = 0
+        self.translate_sample_every = translate_sample_every
 
         assert(grad_accum_count > 0)
         if grad_accum_count > 1:
             assert(self.trunc_size == 0), \
                 """To enable accumulated gradients,
                    you must disable target sequence truncating."""
-
+        if self.translate_sample_every > 0:
+            # TODO
+            # create a translator
+            pass
         # Set model in training mode.
         self.model.train()
 
@@ -184,6 +189,13 @@ class Trainer(object):
                             total_stats.start_time, self.optim.lr,
                             report_stats)
                     self.progress_step += 1
+
+                # translate sample
+                if self.translate_sample_every > 0 and idx % self.translate_sample_every == 0:
+                    # TODO
+                    # translate sample
+                    # print sample
+                    pass
 
                 true_batchs = []
                 accum = 0

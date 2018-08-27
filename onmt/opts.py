@@ -57,15 +57,15 @@ def model_opts(parser):
                        Options are [text|img|audio].""")
 
     group.add_argument('-encoder_type', type=str, default='rnn',
-                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn', 'rnnsearch'],
+                       choices=['rnn', 'brnn', 'mean', 'transformer', 'cnn', 'rnnsearch', 'dl4mt'],
                        help="""Type of encoder layer to use. Non-RNN layers
                        are experimental. Options are
-                       [rnn|brnn|mean|transformer|cnn|rnnsearch].""")
+                       [rnn|brnn|mean|transformer|cnn|rnnsearch|dl4mt].""")
     group.add_argument('-decoder_type', type=str, default='rnn',
-                       choices=['rnn', 'transformer', 'cnn', 'rnnsearch'],
+                       choices=['rnn', 'transformer', 'cnn', 'rnnsearch', 'dl4mt'],
                        help="""Type of decoder layer to use. Non-RNN layers
                        are experimental. Options are
-                       [rnn|transformer|cnn|rnnsearch].""")
+                       [rnn|transformer|cnn|rnnsearch|dl4mt].""")
 
     group.add_argument('-layers', type=int, default=-1,
                        help='Number of layers in enc/dec.')
@@ -336,6 +336,10 @@ def train_opts(parser):
                        Set to zero to turn off label smoothing.
                        For more detailed information, see:
                        https://arxiv.org/abs/1512.00567""")
+    group.add_argument('-mrt', action='store_true',
+                       help="""Use minimal risk training.""")
+    group.add_argument('-schedule_sample', action='store_true',
+                       help="""Use schedule sample when training""")
     # learning rate
     group = parser.add_argument_group('Optimization- Rate')
     group.add_argument('-learning_rate', type=float, default=1.0,
@@ -361,6 +365,8 @@ def train_opts(parser):
     group = parser.add_argument_group('Logging')
     group.add_argument('-report_every', type=int, default=50,
                        help="Print stats at this interval.")
+    group.add_argument('-translate_sample_every', type=int, default=0,
+                       help="Translate sample sentences at this interval.")
     group.add_argument('-exp_host', type=str, default="",
                        help="Send logs to this crayon server.")
     group.add_argument('-exp', type=str, default="",
