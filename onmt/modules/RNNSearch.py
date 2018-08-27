@@ -31,10 +31,10 @@ class RNNSearchGRU(nn.Module):
         reset_gate = F.sigmoid(reset_gate) # B, H
         update_gate = F.sigmoid(update_gate) # B, H
 
-        prev_s_tilde = self.input_in(trg_word) + self.hidden_in(prev_s) + self.ctx_in(ctx)
+        prev_s_tilde = self.input_in(trg_word) + self.hidden_in(reset_gate * prev_s) + self.ctx_in(ctx)
         prev_s_tilde = F.tanh(prev_s_tilde) # B, H
 
-        prev_s = torch.mul((1-reset_gate), prev_s) + torch.mul(reset_gate, prev_s_tilde) # B, H
+        prev_s = torch.mul((1-update_gate), prev_s) + torch.mul(update_gate, prev_s_tilde) # B, H
         return prev_s
 
 class RNNSearchAttention(nn.Module):
@@ -54,10 +54,10 @@ class RNNSearchAttention(nn.Module):
         enc_h_in = self.enc_h_in(enc_h) # S, B, H
         prev_s = self.prev_s_in(prev_s).unsqueeze(0)  # 1, B, H
         h = F.tanh(enc_h_in + prev_s.expand_as(enc_h_in)) # S, B, H
-        h = self.linear(h)  # S, B, 1
+        h = self.linear(h).squeeze(-1)  # S, B
 
-        alpha = F.softmax(h, -1)
-        ctx = torch.bmm(alpha.transpose(0,1).transpose(2,1), enc_h.transpose(0,1)).squeeze(1) # B, 2H
+        alpha = h / h.sum(0)[None, :] # S, B
+        ctx = torch.bmm(alpha.transpose(0,1).unsqueeze(1), enc_h.transpose(0,1)).squeeze(1) # B, 2H
 
         return ctx, alpha
 
@@ -86,7 +86,7 @@ class RNNSearchDecoder(nn.Module):
         attns = {"std": []}
         for i in range(target_len):
             ctx, alpha = self.attention(memory_bank, hidden)
-            attns["std"] += [alpha.squeeze(2)]
+            attns["std"] += [alpha]
             hidden = self.decoder_cell(target[i], hidden, ctx)
             maxout_t = self.maxout_c_in(ctx) + self.maxout_hidden_in(hidden) + self.maxout_prev_y_in(target[i])
             maxout_t = maxout_t.view(maxout_t.size(0), maxout_t.size(1) // 2, 2)
